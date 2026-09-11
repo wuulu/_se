@@ -7,4 +7,3 @@
 學校 | [金門大學資訊工程系](https://www.nqu.edu.tw/educsie/index.php)
 學生 | 吳宇琭
 學號 | 57
-
