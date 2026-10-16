@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>微服務 Docker Demo</title>
+  <style>
+    body{font-family: system-ui; margin:40px; background:#f7f9fc}
+    h1{color:#2c3e50}
+    .card{background:white;padding:16px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:12px}
+    pre{background:#111;color:#eee;padding:8px;border-radius:6px;overflow:auto}
+    button{padding:6px 10px;border-radius:6px;border:1px solid #ddd;cursor:pointer}
+  </style>
+</head>
+<body>
+  <h1>微服務 Docker 系統展示</h1>
+  <div class="card">
+    <h2>狀態</h2>
+    <div>Node API: <span id="api">-</span></div>
+    <div>Python API: <span id="py">-</span></div>
+    <div>Rust API: <span id="rs">-</span></div>
+    <div>DB 存在資料筆數: <span id="db">-</span></div>
+  </div>
+  <div class="card">
+    <h2>測試動作</h2>
+    <button onclick="ping('/api/ping')">Ping Node</button>
+    <button onclick="ping('/py/ping')">Ping Python</button>
+    <button onclick="ping('/rs/ping')">Ping Rust</button>
+    <button onclick="hit()">存 1 筆 + 查詢</button>
+  </div>
+  <div class="card">
+    <h2>回應</h2>
+    <pre id="out"></pre>
+  </div>
+
+  <script>
+    async function ping(path){
+      const res = await fetch(path).then(r=>r.json()).catch(e=>({err:e.toString()}));
+      document.getElementById('out').textContent = JSON.stringify(res,null,2);
+    }
+    async function hit(){
+      await fetch('/api/hit',{method:'POST'}).catch(()=>{});
+      await refresh();
+    }
+    async function refresh(){
+      const a = await fetch('/api/health').then(r=>r.json()).catch(()=>null);
+      const p = await fetch('/py/health').then(r=>r.json()).catch(()=>null);
+      const r = await fetch('/rs/health').then(r=>r.json()).catch(()=>null);
+      const d = await fetch('/api/count').then(r=>r.json()).catch(()=>null);
+      document.getElementById('api').textContent = a?a.ok:'err';
+      document.getElementById('py').textContent = p?p.ok:'err';
+      document.getElementById('rs').textContent = r?r.ok:'err';
+      document.getElementById('db').textContent = d&&d.count!=null?d.count:'err';
+      document.getElementById('out').textContent = JSON.stringify({a,p,r,d},null,2);
+    }
+    refresh(); setInterval(refresh,3000);
+  </script>
+</body>
+</html>

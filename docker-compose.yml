@@ -1,0 +1,72 @@
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    container_name: demo-nginx
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+      - py
+      - rs
+    networks:
+      - demo
+
+  api:
+    build: ./api-node
+    container_name: demo-api
+    environment:
+      PORT: "3000"
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: app
+      PGPASSWORD: app
+      PGDATABASE: appdb
+      PY_URL: http://py:8000/
+      RS_URL: http://rs:8080/
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - demo
+
+  py:
+    build: ./service-python
+    container_name: demo-python
+    environment:
+      PORT: "8000"
+    networks:
+      - demo
+
+  rs:
+    build: ./service-rust
+    container_name: demo-rust
+    environment:
+      PORT: "8080"
+    networks:
+      - demo
+
+  db:
+    image: postgres:16-alpine
+    container_name: demo-postgres
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: appdb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d appdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - demo
+
+volumes:
+  pgdata:
+
+networks:
+  demo:
+    driver: bridge
